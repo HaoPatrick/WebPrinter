@@ -1,13 +1,32 @@
 import os
+import subprocess
+from typing import List, Dict
 
-DEBUG = 'DEBUG' in os.environ
+import config
+
+DEBUG: bool = 'DEBUG' in os.environ
 
 
-def get_info_from_IO():
-  pass
+def get_printer_info() -> List[Dict[str, str]]:
+  try:
+    raw_text: str = get_info_from_device()
+  except Exception:
+    raise FileNotFoundError("printer connection error")
+  return parse_info(raw_text)
 
 
-def get_printer_info():
+def get_info_from_device() -> str:
+  if DEBUG:
+    return config.LPOPTION_SAMPLE
+  else:
+    rv = subprocess.Popen(["lpoptions", "-p", config.PRINTER_NAME, "-l"], stdout=subprocess.PIPE)
+    plaintext, error = rv.communicate()
+    if error:
+      raise AttributeError(error)
+    return plaintext.decode()
+
+
+def parse_info(raw_text: str) -> List[Dict[str, str]]:
   property_lines = list(filter(None, raw_text.split("\n")))
   properties = []
   for prt in property_lines:
@@ -27,4 +46,4 @@ def get_printer_info():
       "options": options,
       "default": current
     })
-  print(properties)
+  return properties

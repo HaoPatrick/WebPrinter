@@ -9,9 +9,9 @@
 
 <body>
   <div id="app">
+    <h2 style="text-align:center">CV Lab Printing Service</h2>
     <div class="main-container">
-      <div class="column-wrapper">
-        <h2>CV Lab Printing Service</h2>
+      <div>
         <el-upload ref="upload" drag accept="application/pdf" :auto-upload='false' action="/api/print">
           <i class="el-icon-upload"></i>
           <div class="el-upload__text">Drop file here or
@@ -19,6 +19,19 @@
           </div>
         </el-upload>
         <el-button size="small" type="success" @click="submitUpload">Print it</el-button>
+      </div>
+      <div style="max-width:50%;margin-left:1em;">
+        <el-card>
+          <h5>Config</h5>
+          <div style="display:flex;flex-wrap:wrap;">
+            <div style="min-width:22em;" v-for='(item,index) in printerOptions'>
+              <span>{{item.display_name}}: </span>
+              <el-select style="max-width:10em;" placeholder="Select" v-model="item['default']">
+                <el-option v-for="option in item['options']" :key="option" :label="option" :value="option"></el-option>
+              </el-select>
+            </div>
+          </div>
+        </el-card>
       </div>
     </div>
   </div>
@@ -31,11 +44,29 @@
   new Vue({
     el: '#app',
     data: function () {
-      return {}
+      return {
+        printerOptions: null
+      }
+    },
+    mounted() {
+      var xhr = new XMLHttpRequest()
+      let self = this
+      xhr.onload = function () {
+        self.printerOptions = JSON.parse(this.responseText)['options']
+      }
+      xhr.open("GET", "/api/printer")
+      xhr.send()
     },
     methods: {
       submitUpload() {
         this.$refs.upload.submit()
+        let xhr = new XMLHttpRequest()
+        let self = this
+        xhr.onload = function () {
+          console.log(this.responseText)
+        }
+        xhr.open("POST", "/api/print")
+        xhr.send(self.printerOptions)
       }
     }
   })
@@ -45,11 +76,9 @@
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
   }
 
-  .column-wrapper {}
-
   .main-container {
     display: flex;
-    justify-content: space-around;
+    justify-content: center;
   }
 </style>
 
