@@ -16,3 +16,4 @@ HPRedEye/Auto Red-eye Removal: *default off automatic
 '''
 PRINTER_NAME = "HP_Color_LaserJet_3600"
 UPLOAD_FOLDER = './uploads'
+TOKEN = 'abcd'

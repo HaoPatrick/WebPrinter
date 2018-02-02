@@ -47,9 +47,14 @@ def upload_file():
 def print_it():
   if request.method == 'POST':
     user_config = request.json
-    PrinterInfo.set_printer(user_config['options'])
-    PrinterInfo.print_file(user_config['filename'])
-    return return_error("cool")
+    if user_config.get('options', None) and user_config.get('token', None):
+      if user_config['token'] != config.TOKEN:
+        return jsonify({'status': 'error'})
+      PrinterInfo.set_printer(user_config['options'])
+      PrinterInfo.print_file(user_config['filename'])
+      return jsonify({'status': 'cool'})
+    else:
+      return return_error('not a chance')
 
 
 @app.route('/')

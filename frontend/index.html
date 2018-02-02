@@ -18,13 +18,14 @@
             <em>click to upload</em>
           </div>
         </el-upload>
+        <el-input size="small" v-model="token" placeholder="Access Token" style="margin-bottom:0.5em;"></el-input>
         <el-button size="small" type="success" @click="submitUpload">Print it</el-button>
       </div>
       <div style="max-width:50%;margin-left:1em;">
         <el-card>
           <h5>Config</h5>
           <div style="display:flex;flex-wrap:wrap;">
-            <div style="min-width:22em;" v-for='(item,index) in printerOptions'>
+            <div style="min-width:22em;margin-bottom:0.3em;" v-for='(item,index) in printerOptions'>
               <span>{{item.display_name}}: </span>
               <el-select style="max-width:10em;" placeholder="Select" v-model="item['selected']">
                 <el-option v-for="option in item['options']" :key="option" :label="option" :value="option"></el-option>
@@ -47,10 +48,12 @@
       return {
         printerOptions: null,
         fileList: [],
-        fileName: ''
+        fileName: '',
+        token: ''
       }
     },
     mounted() {
+      this.token = localStorage.getItem('accessToken')
       var xhr = new XMLHttpRequest()
       let self = this
       xhr.onload = function () {
@@ -71,8 +74,9 @@
         }
         xhr.open("POST", "/api/print")
         xhr.setRequestHeader('Content-Type', 'application/json')
-        xhr.send(JSON.stringify({ options: compactOption, filename: self.fileName }))
+        xhr.send(JSON.stringify({ options: compactOption, filename: self.fileName, token: self.token }))
         this.fileList = []
+        window.localStorage.setItem('accessToken', self.token)
       },
       handleSuccess(val) {
         console.log(val)
