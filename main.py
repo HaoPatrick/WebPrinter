@@ -1,14 +1,20 @@
 from flask import jsonify, Flask, request, render_template
 
-import PrinterInfo
+import PrinterHandler
 import os
 import config
 
 app = Flask(__name__, static_folder='frontend')
 
 
-def return_error(e):
-  return jsonify({"error": e})
+def error_response(e, error_code=500):
+  response = jsonify({'status': 'error', 'msg': e})
+  response.status_code = error_code
+  return response
+
+
+def data_response(data):
+  return jsonify({'status': 'ok', 'data': data})
 
 
 def allowed_file(filename: str):
@@ -24,23 +30,23 @@ def secure_filename(filename: str):
 def printer_view():
   if request.method == 'GET':
     try:
-      return jsonify({"options": PrinterInfo.get_printer_info()})
-    except FileNotFoundError as e:
-      return jsonify(return_error(e))
+      return data_response({'options': PrinterHandler.get_printer_info()})
+    except PrinterHandler.PrinterError as e:
+      return error_response(e)
 
 
 @app.route('/api/upload', methods=['GET', 'POST'])
 def upload_file():
   if request.method == 'POST':
     if 'file' not in request.files:
-      return return_error("file not found")
+      return error_response("file not found", 403)
     file = request.files['file']
     if file.filename == '':
-      return return_error("no selected file")
+      return error_response("no selected file", 403)
     if file and allowed_file(file.filename):
       rv_filename = secure_filename(file.filename)
       file.save(os.path.join(config.UPLOAD_FOLDER, rv_filename))
-      return jsonify({"status": "cool", "filename": rv_filename})
+      return data_response({'filename': rv_filename})
 
 
 @app.route('/api/print', methods=['GET', 'POST'])
@@ -49,12 +55,15 @@ def print_it():
     user_config = request.json
     if user_config.get('options', None) and user_config.get('token', None):
       if user_config['token'] != config.TOKEN:
-        return jsonify({'status': 'error'})
-      PrinterInfo.set_printer(user_config['options'])
-      PrinterInfo.print_file(user_config['filename'])
-      return jsonify({'status': 'cool'})
+        return error_response('incorrect token', 403)
+      try:
+        PrinterHandler.set_printer(user_config['options'])
+        PrinterHandler.print_file(user_config['filename'], user_config['basicOptions'])
+        return data_response({'msg': 'printing'})
+      except FileNotFoundError as e:
+        return error_response('Requested file not found', 400)
     else:
-      return return_error('not a chance')
+      return error_response('not enough argument', 403)
 
 
 @app.route('/')

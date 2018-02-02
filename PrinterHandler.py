@@ -11,7 +11,7 @@ def get_printer_info() -> List[Dict[str, str]]:
   try:
     raw_text: str = get_info_from_device()
   except Exception:
-    raise FileNotFoundError("printer connection error")
+    raise PrinterError("printer connection error")
   return parse_info(raw_text)
 
 
@@ -56,6 +56,15 @@ def set_printer(printer_config: List[Dict[str, str]]) -> None:
   subprocess.call(command)
 
 
-def print_file(filename: str) -> None:
+def print_file(filename: str, basic_config) -> None:
   command = ['lp', '-d', config.PRINTER_NAME, os.path.join(config.UPLOAD_FOLDER, filename)]
+  command.extend(['-n', str(basic_config['number']), '-o', 'collate=' + str(basic_config['collate'])])
   subprocess.call(command)
+
+
+class PrinterError(Exception):
+  def __init__(self, value):
+    self.value = value
+  
+  def __str__(self):
+    return repr((self.value))

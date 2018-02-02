@@ -25,7 +25,16 @@
         <el-card>
           <h5>Config</h5>
           <div style="display:flex;flex-wrap:wrap;">
-            <div style="min-width:22em;margin-bottom:0.3em;" v-for='(item,index) in printerOptions'>
+            <div class="option">
+              <span>Number of copy:</span>
+              <el-input-number v-model="numCopy" :min="1" :max="5"></el-input-number>
+            </div>
+            <div class="option">
+              <span>Collate:</span>
+              <el-switch v-model="collate">
+              </el-switch>
+            </div>
+            <div class="option" v-for='(item,index) in printerOptions'>
               <span>{{item.display_name}}: </span>
               <el-select style="max-width:10em;" placeholder="Select" v-model="item['selected']">
                 <el-option v-for="option in item['options']" :key="option" :label="option" :value="option"></el-option>
@@ -49,7 +58,9 @@
         printerOptions: null,
         fileList: [],
         fileName: '',
-        token: ''
+        token: '',
+        numCopy: 1,
+        collate: false
       }
     },
     mounted() {
@@ -57,7 +68,12 @@
       var xhr = new XMLHttpRequest()
       let self = this
       xhr.onload = function () {
-        self.printerOptions = JSON.parse(this.responseText)['options']
+        const rawResponse = JSON.parse(this.responseText)
+        if (rawResponse.status === 'error') {
+          this.$message(rawResponse.msg)
+        } else {
+          self.printerOptions = rawResponse.data['options']
+        }
       }
       xhr.open("GET", "/api/printer")
       xhr.send()
@@ -69,18 +85,33 @@
         const compactOption = self.printerOptions.map(item => {
           return { option_name: item.option_name, selected: item.selected }
         })
-        xhr.onload = () => {
-          console.log(this.responseText)
-        }
+
         xhr.open("POST", "/api/print")
         xhr.setRequestHeader('Content-Type', 'application/json')
-        xhr.send(JSON.stringify({ options: compactOption, filename: self.fileName, token: self.token }))
+        xhr.onload = function () {
+          const response = JSON.parse(this.responseText)
+          if (response.status === 'error') {
+            self.$message({
+              message: response.data['msg'],
+              type: 'error'
+            })
+          } else {
+            self.$message({
+              message: response.data['msg']
+            })
+          }
+        }
+        xhr.send(JSON.stringify(
+          {
+            options: compactOption, filename: self.fileName, token: self.token,
+            basicOptions: { number: self.numCopy, collate: self.collate }
+          }
+        ))
         this.fileList = []
         window.localStorage.setItem('accessToken', self.token)
       },
       handleSuccess(val) {
-        console.log(val)
-        this.fileName = val.filename
+        this.fileName = val.data.filename
       }
     }
   })
@@ -93,6 +124,11 @@
   .main-container {
     display: flex;
     justify-content: center;
+  }
+
+  .option {
+    min-width: 22em;
+    margin-bottom: 0.3em;
   }
 </style>
 
