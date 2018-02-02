@@ -12,7 +12,7 @@
     <h2 style="text-align:center">CV Lab Printing Service</h2>
     <div class="main-container">
       <div>
-        <el-upload ref="upload" drag accept="application/pdf" :auto-upload='false' action="/api/print">
+        <el-upload ref="upload" drag accept="application/pdf" :file-list="fileList" :on-success="handleSuccess" action="/api/upload">
           <i class="el-icon-upload"></i>
           <div class="el-upload__text">Drop file here or
             <em>click to upload</em>
@@ -26,7 +26,7 @@
           <div style="display:flex;flex-wrap:wrap;">
             <div style="min-width:22em;" v-for='(item,index) in printerOptions'>
               <span>{{item.display_name}}: </span>
-              <el-select style="max-width:10em;" placeholder="Select" v-model="item['default']">
+              <el-select style="max-width:10em;" placeholder="Select" v-model="item['selected']">
                 <el-option v-for="option in item['options']" :key="option" :label="option" :value="option"></el-option>
               </el-select>
             </div>
@@ -45,7 +45,9 @@
     el: '#app',
     data: function () {
       return {
-        printerOptions: null
+        printerOptions: null,
+        fileList: [],
+        fileName: ''
       }
     },
     mounted() {
@@ -59,14 +61,22 @@
     },
     methods: {
       submitUpload() {
-        this.$refs.upload.submit()
         let xhr = new XMLHttpRequest()
         let self = this
-        xhr.onload = function () {
+        const compactOption = self.printerOptions.map(item => {
+          return { option_name: item.option_name, selected: item.selected }
+        })
+        xhr.onload = () => {
           console.log(this.responseText)
         }
         xhr.open("POST", "/api/print")
-        xhr.send(self.printerOptions)
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        xhr.send(JSON.stringify({ options: compactOption, filename: self.fileName }))
+        this.fileList = []
+      },
+      handleSuccess(val) {
+        console.log(val)
+        this.fileName = val.filename
       }
     }
   })

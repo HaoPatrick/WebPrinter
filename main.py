@@ -8,7 +8,7 @@ app = Flask(__name__, static_folder='frontend')
 
 
 def return_error(e):
-  return {"error": e}
+  return jsonify({"error": e})
 
 
 def allowed_file(filename: str):
@@ -29,8 +29,8 @@ def printer_view():
       return jsonify(return_error(e))
 
 
-@app.route('/api/print', methods=['GET', 'POST'])
-def print_it():
+@app.route('/api/upload', methods=['GET', 'POST'])
+def upload_file():
   if request.method == 'POST':
     if 'file' not in request.files:
       return return_error("file not found")
@@ -38,8 +38,18 @@ def print_it():
     if file.filename == '':
       return return_error("no selected file")
     if file and allowed_file(file.filename):
-      file.save(os.path.join(config.UPLOAD_FOLDER, secure_filename(file.filename)))
-      return jsonify({"status": "cool"})
+      rv_filename = secure_filename(file.filename)
+      file.save(os.path.join(config.UPLOAD_FOLDER, rv_filename))
+      return jsonify({"status": "cool", "filename": rv_filename})
+
+
+@app.route('/api/print', methods=['GET', 'POST'])
+def print_it():
+  if request.method == 'POST':
+    user_config = request.json
+    PrinterInfo.set_printer(user_config['options'])
+    PrinterInfo.print_file(user_config['filename'])
+    return return_error("cool")
 
 
 @app.route('/')

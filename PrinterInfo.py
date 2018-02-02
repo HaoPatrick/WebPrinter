@@ -44,6 +44,18 @@ def parse_info(raw_text: str) -> List[Dict[str, str]]:
       "display_name": names[1],
       "option_name": names[0],
       "options": options,
-      "default": current
+      "selected": current
     })
   return properties
+
+
+def set_printer(printer_config: List[Dict[str, str]]) -> None:
+  command = ['lpoptions', '-p', config.PRINTER_NAME]
+  for option in printer_config:
+    command.extend(['-o', '{}={}'.format(option['option_name'], option['selected'])])
+  subprocess.call(command)
+
+
+def print_file(filename: str) -> None:
+  command = ['lp', '-d', config.PRINTER_NAME, os.path.join(config.UPLOAD_FOLDER, filename)]
+  subprocess.call(command)
