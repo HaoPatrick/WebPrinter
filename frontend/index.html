@@ -57,7 +57,7 @@
   </footer>
 </body>
 <!-- import Vue before Element -->
-<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.13/dist/vue.min.js"></script>
 <!-- import JavaScript -->
 <script src="https://unpkg.com/element-ui/lib/index.js"></script>
 <script>
@@ -74,7 +74,7 @@
       }
     },
     mounted() {
-      this.token = localStorage.getItem('accessToken')
+      this.token = this.getParameterByName('token') || localStorage.getItem('accessToken')
       var xhr = new XMLHttpRequest()
       let self = this
       xhr.onload = function () {
@@ -122,6 +122,15 @@
       },
       handleSuccess(val) {
         this.fileName = val.data.filename
+      },
+      getParameterByName: function (name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+          results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
       }
     }
   })
