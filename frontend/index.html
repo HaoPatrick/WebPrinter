@@ -70,7 +70,8 @@
         fileName: '',
         token: '',
         numCopy: 1,
-        collate: false
+        collate: false,
+        printingInProgress: false
       }
     },
     mounted() {
@@ -92,6 +93,13 @@
       submitUpload() {
         let xhr = new XMLHttpRequest()
         let self = this
+        if (self.printingInProgress) {
+          self.$message({
+            message: 'Printing in progress, you may wait up to 1 min for printer to setup...',
+            duration: 10000
+          })
+          return
+        }
         const compactOption = self.printerOptions.map(item => {
           return { option_name: item.option_name, selected: item.selected }
         })
@@ -107,7 +115,8 @@
             })
           } else {
             self.$message({
-              message: response.data['msg']
+              message: response.data['msg'] + ' you may wait up to 1 min for printer to setup',
+              duration: 10000
             })
           }
         }
@@ -119,6 +128,10 @@
         ))
         this.fileList = []
         window.localStorage.setItem('accessToken', self.token)
+        self.printingInProgress = true
+        setTimeout(() => {
+          self.printingInProgress = false
+        }, 30000)
       },
       handleSuccess(val) {
         this.fileName = val.data.filename
